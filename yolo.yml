@@ -1,0 +1,8 @@
+path: /scratch2/gorillawatch/data/detection_datasets/body_detection_gorilla/
+
+train: train
+val: val
+test: test
+
+names:
+  0: gorilla
