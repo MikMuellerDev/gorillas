@@ -44,6 +44,7 @@
 		"source=${localEnv:HOME}/.gitconfig,target=/home/mambauser/.gitconfig,type=bind", // this is to get git credentials
 		"source=${localEnv:HOME}/.cache,target=/home/mambauser/.cache,type=bind", // general cache directory
 		"source=${localEnv:HOME}/.bash_history,target=/home/mambauser/.bash_history,type=bind", // general cache directory
+		"source=${localEnv:HOME}/.ssh,target=/home/mambauser/.ssh,type=bind", // general cache directory
 		"source=/scratch2/gorillawatch,target=/scratch2/gorillawatch,type=bind,ro", // general cache directory
 	],
 	"remoteEnv": {
