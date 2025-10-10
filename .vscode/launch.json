@@ -16,6 +16,7 @@
             "env": {
                 "WANDB_MODE": "offline"
             },
+            "cwd": "${workspaceFolder}/gorilla_reid"
         }
     ]
 }
