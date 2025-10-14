@@ -46,6 +46,7 @@
 		"source=${localEnv:HOME}/.bash_history,target=/home/mambauser/.bash_history,type=bind", // general cache directory
 		"source=${localEnv:HOME}/.ssh,target=/home/mambauser/.ssh,type=bind", // general cache directory
 		"source=/scratch2/gorillawatch,target=/scratch2/gorillawatch,type=bind,ro", // general cache directory
+		"source=/scratch2/gorillamonitor2/spac23+24-face_45-squared,target=/scratch2/gorillamonitor2/spac23+24-face_45-squared,type=bind,ro", // general cache directory
 	],
 	"remoteEnv": {
 		"WANDB_API_KEY": "${localEnv:WANDB_API_KEY}",

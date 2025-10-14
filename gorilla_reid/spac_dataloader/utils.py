@@ -1,7 +1,7 @@
 import os
 from PIL import Image
 import torchvision.transforms as transforms
-from datapoint import SPACDataPoint
+from . import datapoint
 from typing import List
 
 
@@ -28,7 +28,7 @@ def read_image_to_tensor(abspath: str, image_dim=(224, 224)):
 
 
 def datapoint_from_path(abspath: str, with_transformed_filelist: bool):
-    filename = os.basename(abspath)
+    filename = os.path.basename(abspath)
     path_segments = filename.split("_")
     gorilla_id = path_segments[0]
     camera_id = path_segments[1]
@@ -38,7 +38,7 @@ def datapoint_from_path(abspath: str, with_transformed_filelist: bool):
     if with_transformed_filelist:
         transformations = get_modified_filelist(filename)
 
-    dp = SPACDataPoint(
+    dp = datapoint.SPACDataPoint(
         gorilla_id=gorilla_id,
         camera=camera_id,
         date=date,

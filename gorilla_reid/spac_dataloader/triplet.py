@@ -1,7 +1,6 @@
 import torch
-from datapoint import SPACDataPoint
 from typing import Tuple
-from utils import read_image_to_tensor
+from . import utils, datapoint
 
 
 class GorillaTripletTensor():
@@ -24,15 +23,15 @@ class GorillaTripletTensor():
 
 
 class GorillaTripletDataPoint():
-    this_class: SPACDataPoint
-    in_class: SPACDataPoint
-    out_class: SPACDataPoint
+    this_class: datapoint.SPACDataPoint
+    in_class: datapoint.SPACDataPoint
+    out_class: datapoint.SPACDataPoint
 
     def __init__(
             self,
-            this_class: SPACDataPoint,
-            in_class: SPACDataPoint,
-            out_class: SPACDataPoint,
+            this_class: datapoint.SPACDataPoint,
+            in_class: datapoint.SPACDataPoint,
+            out_class: datapoint.SPACDataPoint,
     ):
         self.this_class = this_class
         self.in_class = in_class
@@ -41,7 +40,7 @@ class GorillaTripletDataPoint():
     def to_tensor(self) -> GorillaTripletTensor:
 
         return GorillaTripletTensor(
-            this_class=read_image_to_tensor(self.this_class.filepath),
-            in_class=read_image_to_tensor(self.in_class.filepath),
-            out_class=read_image_to_tensor(self.out_class.filepath),
+            this_class=utils.read_image_to_tensor(self.this_class.filepath),
+            in_class=utils.read_image_to_tensor(self.in_class.filepath),
+            out_class=utils.read_image_to_tensor(self.out_class.filepath),
         )

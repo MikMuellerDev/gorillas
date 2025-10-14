@@ -9,60 +9,13 @@ import torch.nn.functional as F
 import os
 from tqdm.notebook import tqdm
 from IPython.display import clear_output
-from utils import rfile, datapoint_from_path
-from datapoint import SPACDataPoint, spac_datapoint_from_dict
-from triplet import GorillaTripletDataPoint
+from . import utils
+# from utils import DEFAULT_SPAC_IMAGE_DIR, DP_DB_JSON_PATH, rfile, datapoint_from_path
+from . import datapoint
+from . import triplet
+# from datapoint import SPACDataPoint, spac_datapoint_from_dict
+# from triplet import GorillaTripletDataPoint
 
-
-def load_datapoints(image_dir=DEFAULT_SPAC_IMAGE_DIR) -> List[SPACDataPoint]:
-    """
-    Loads datapoint index from disk.
-    If the cache file does not exist, this can take a while because it needs
-    to scan the entire file structure.
-    """
-    try:
-        with open(DP_DB_JSON_PATH, "r", encoding="utf-8") as f:
-            print("[LOAD] Using cached datapoint index...")
-            loaded = json.loads(f.read())
-            transformed = [spac_datapoint_from_dict(d) for d in loaded]
-            return transformed
-    except Exception:
-        # Naive implementation, assume that any error can be ignored.
-        pass
-
-    total_files = 0
-
-    directory = os.fsencode(image_dir)
-    total_files += len(os.listdir(directory))
-
-    datapoints = []
-
-    pbar = tqdm(total=total_files, desc="[LOAD] Indexing...")
-
-    for [idx, file] in enumerate(os.listdir(directory)):
-        filename = os.fsdecode(file)
-        if filename.endswith(".png"):
-            complete_path_image = os.path.join(image_dir, filename)
-            dp = datapoint_from_path(complete_path_image)
-            #     gorilla_id=gorilla_id,
-            #     camera=camera_id,
-            #     date=date,
-            #     filepath=complete_path_image,
-            # )
-
-            datapoints.append(dp)
-
-            pbar.update(1)
-            continue
-        else:
-            continue
-
-    with open(DP_DB_JSON_PATH, "w", encoding="utf-8") as f:
-        dp_dicts = [dp.to_dict() for dp in datapoints]
-        json.dump(dp_dicts, f, indent=4, ensure_ascii=False)
-
-    print(f"[LOAD] Saved {len(datapoints)} datapoints to '{DP_DB_JSON_PATH}'")
-    return datapoints
 
 
 def read_image(path, label_mapping: dict, image_dim=(224, 224)):
@@ -92,7 +45,7 @@ def read_image(path, label_mapping: dict, image_dim=(224, 224)):
 class GorillaDataset(Dataset):
     def __init__(
             self,
-            datapoints: List[SPACDataPoint],
+            datapoints: List[datapoint.SPACDataPoint],
             percent_start: int,
             percent_end: int,
             include_transformations: bool):
@@ -142,8 +95,8 @@ class GorillaDataset(Dataset):
         if include_transformations:
             for dp in self.datapoints:
                 for transformed in dp.transformations:
-                    
-
+                    additional_flattened.append(transformed)
+        self.datapoints.extend(additional_flattened)
 
                 
         #
@@ -151,9 +104,12 @@ class GorillaDataset(Dataset):
         #
         self.dataset_indices_used_for_triplets = {}
 
-        print(f"[DATASET]: Using data from index {start_index} to {end_index}, covering {end_index - start_index}, total {total_datapoints} DP.")
+        additional = ""
+        if include_transformations:
+            additional = f" (w. transformations: {len(self.datapoints)})"
+        print(f"[DATASET]: Using data from index {start_index} to {end_index}, covering {end_index - start_index}, total {total_datapoints}.{additional}")
 
-    def get_triplet(self, idx: int) -> GorillaTripletDataPoint:
+    def get_triplet(self, idx: int) -> triplet.GorillaTripletDataPoint:
         base_datapoint = self.datapoints[idx]
         gorilla_id = base_datapoint.gorilla_id
 
@@ -180,7 +136,7 @@ class GorillaDataset(Dataset):
         
         in_class_datapoint = self.datapoints_by_gorilla_id[gorilla_id][in_class_index]
         out_class_datapoint = self.datapoints_by_gorilla_id[out_class_gorilla_id][out_class_datapoint_index]
-        return GorillaTripletDataPoint(
+        return triplet.GorillaTripletDataPoint(
             this_class=base_datapoint,
             in_class=in_class_datapoint,
             out_class=out_class_datapoint,
