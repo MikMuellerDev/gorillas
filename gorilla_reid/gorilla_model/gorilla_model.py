@@ -2,20 +2,29 @@ import os
 import torch
 import wandb
 from torch import nn, optim
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
 # from gorilla_reid.k_nearest_neighbor import calculate_accuracy, get_dataset_embeddings
 from . import k_nearest_neighbor
 
 device = "cuda:0"
 
+def setup(rank, world_size):
+    dist.init_process_group("nccl", rank=rank, world_size=world_size)
+
 
 def train(
+    # Distributed
+    rank,
+    world_size,
+    # Actual training
     model: nn.Module,
     epochs: int,
     learning_rate: float,
     # Datasets
-    dataloader_train: DataLoader,
-    dataloader_val: DataLoader,
+    dataset_train, # TODO: typing
+    dataset_val,   # TODO: typing
     checkpoint_dir: str = "./checkpoints",
     save_every: int = 1,  # save every n epochs
 ):
@@ -40,7 +49,7 @@ def train(
         for state in optimizer.state.values():
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
-                    state[k] = v.to(device)
+                    state[k] = v.to(rank)
 
         start_epoch = checkpoint["epoch"]
         train_loss = checkpoint["train_loss"]
@@ -51,7 +60,8 @@ def train(
         start_epoch = 0
         print("No checkpoint found — starting from scratch.")
 
-    model = model.to(device)
+    model = model.to(rank)
+    model = DDP(model, device_ids=[rank])
 
     with wandb.init(project="GORILLA_FACE", name="training", config={"epochs": epochs}) as run:
         run.watch(model, log_freq=100)
@@ -73,9 +83,9 @@ def train(
             for [idx, batch] in enumerate(dataloader_train):
                 _, this_class, in_class, out_class = batch
 
-                this_class = this_class.to(device)
-                in_class = in_class.to(device)
-                out_class = out_class.to(device)
+                this_class = this_class.to(rank)
+                in_class = in_class.to(rank)
+                out_class = out_class.to(rank)
 
                 # data = data.to(device)
                 # labels = cpu_labels.to(device)
@@ -109,9 +119,9 @@ def train(
                 for [idx, batch] in enumerate(dataloader_val):
                     labels, this_class, in_class, out_class = batch
 
-                    this_class = this_class.to(device)
-                    in_class = in_class.to(device)
-                    out_class = out_class.to(device)
+                    this_class = this_class.to(rank)
+                    in_class = in_class.to(rank)
+                    out_class = out_class.to(rank)
 
                     optimizer.zero_grad()
 
