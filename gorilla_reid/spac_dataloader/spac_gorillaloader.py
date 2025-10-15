@@ -1,4 +1,4 @@
-import json
+# import json
 import random
 from typing import List
 import torch
@@ -7,15 +7,13 @@ from torch.utils.data import Dataset
 from PIL import Image
 import torch.nn.functional as F
 import os
-from tqdm.notebook import tqdm
-from IPython.display import clear_output
-from . import utils
+# from tqdm.notebook import tqdm
+# from IPython.display import clear_output
 # from utils import DEFAULT_SPAC_IMAGE_DIR, DP_DB_JSON_PATH, rfile, datapoint_from_path
 from . import datapoint
 from . import triplet
 # from datapoint import SPACDataPoint, spac_datapoint_from_dict
 # from triplet import GorillaTripletDataPoint
-
 
 
 def read_image(path, label_mapping: dict, image_dim=(224, 224)):

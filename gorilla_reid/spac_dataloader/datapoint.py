@@ -3,6 +3,7 @@ import os
 from typing import List
 from tqdm.notebook import tqdm
 from . import utils
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 
 class SPACDataPoint():
@@ -46,8 +47,20 @@ def spac_datapoint_from_dict(dictionary) -> SPACDataPoint:
 
 
 #
+#
+#
 # Loader
 #
+#
+#
+
+
+def process_image(filename, image_dir_base):
+    if not filename.endswith(".png"):
+        return None
+    complete_path_image = os.path.join(image_dir_base, filename)
+    dp = utils.datapoint_from_path(complete_path_image, True)
+    return dp
 
 
 def load_datapoints(image_dir=utils.DEFAULT_SPAC_IMAGE_DIR) -> List[SPACDataPoint]:
@@ -65,30 +78,20 @@ def load_datapoints(image_dir=utils.DEFAULT_SPAC_IMAGE_DIR) -> List[SPACDataPoin
     except Exception:
         # Naive implementation, assume that any error can be ignored.
         pass
-
-    total_files = 0
-
+    
+    
+    print("[LOAD] Start indexing...")
     directory = os.fsencode(image_dir)
-    total_files += len(os.listdir(directory))
+    files = [f for f in os.listdir(directory) if os.fsdecode(f).endswith(".png")]
 
     datapoints = []
-
-    stepsize = 10
-    pbar = tqdm(total=total_files, desc="[LOAD] Indexing...")
-
-    # Multithreaded
-
-    for [idx, file] in enumerate(os.listdir(directory)):
-        filename = os.fsdecode(file)
-        if filename.endswith(".png"):
-            complete_path_image = os.path.join(image_dir, filename)
-            dp = utils.datapoint_from_path(complete_path_image, True)
-            datapoints.append(dp)
-            if idx % stepsize == 0:
-                pbar.update(stepsize)
-            continue
-        else:
-            continue
+    with ProcessPoolExecutor(max_workers=48) as executor:
+        futures = [executor.submit(process_image, os.fsdecode(f), image_dir) for f in files]
+        for f in tqdm(as_completed(futures), total=len(futures)):
+            dp = f.result()
+            if dp is not None:
+                datapoints.append(dp)
+    
 
     with open(utils.DP_DB_JSON_PATH, "w", encoding="utf-8") as f:
         dp_dicts = [dp.to_dict() for dp in datapoints]

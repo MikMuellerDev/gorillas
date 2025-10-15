@@ -3,7 +3,8 @@ import torch
 import wandb
 from torch import nn, optim
 from torch.utils.data import DataLoader
-from gorilla_reid.k_nearest_neighbor import calculate_accuracy, get_dataset_embeddings
+# from gorilla_reid.k_nearest_neighbor import calculate_accuracy, get_dataset_embeddings
+from . import k_nearest_neighbor
 
 device = "cuda:0"
 
@@ -103,7 +104,7 @@ def train(
             model.eval()
 
             with torch.no_grad():
-                annotated_search_space = get_dataset_embeddings(dataloader=dataloader_val, model=model, device=device)
+                annotated_search_space = k_nearest_neighbor.get_dataset_embeddings(dataloader=dataloader_val, model=model, device=device)
 
                 for [idx, batch] in enumerate(dataloader_val):
                     labels, this_class, in_class, out_class = batch
@@ -120,7 +121,7 @@ def train(
 
                     query_embeddings = [output_anchor[index] for index in range(output_anchor.shape[0])]
                     annotated_query_embeddings = list(zip(labels, query_embeddings))
-                    val_accuracy_sum += calculate_accuracy(
+                    val_accuracy_sum += k_nearest_neighbor.calculate_accuracy(
                         annotated_search_space=annotated_search_space, annotated_queries=annotated_query_embeddings
                     )
 
